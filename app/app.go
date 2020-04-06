@@ -113,11 +113,6 @@ func (a *App) StopServer() {
 
 func (a *App) WriteMetadata(file string) error {
 	metaPath := a.MetadataDir(file)
-
-	if a.Configuration.Verbose {
-		log.Println("Metadata dir: " + metaPath)
-	}
-
 	meta, body, err := a.Parse(file)
 	if err != nil {
 		return err
@@ -141,8 +136,8 @@ func (a *App) MetadataDir(file string) string {
 func (a *App) ReadFileBody(file string) (string, error) {
 	metaPath := a.MetadataDir(file)
 	body, err := ioutil.ReadFile(path.Join(metaPath, "body.txt"))
-	if !os.IsNotExist(err) {
-		return "", errors.New("file not parsed yet")
+	if os.IsNotExist(err) {
+		return "", errors.New("file not parsed yet (" + metaPath + ")")
 	}
 
 	return string(body), err
@@ -151,7 +146,7 @@ func (a *App) ReadFileBody(file string) (string, error) {
 func (a *App) ReadFileMetadata(file string) (string, error) {
 	metaPath := a.MetadataDir(file)
 	meta, err := ioutil.ReadFile(path.Join(metaPath, "metadata.json"))
-	if !os.IsNotExist(err) {
+	if os.IsNotExist(err) {
 		return "", errors.New("file not parsed yet")
 	}
 

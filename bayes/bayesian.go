@@ -53,16 +53,14 @@ type serializableClassifier struct {
 // structure with a trie-like structure for more
 // efficient storage.
 type classData struct {
-	Freqs   map[string]float64
-	FreqTfs map[string][]float64
-	Total   int
+	Freqs map[string]float64
+	Total int
 }
 
 // newClassData creates a new empty classData node.
 func newClassData() *classData {
 	return &classData{
-		Freqs:   make(map[string]float64),
-		FreqTfs: make(map[string][]float64),
+		Freqs: make(map[string]float64),
 	}
 }
 
