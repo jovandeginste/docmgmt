@@ -11,14 +11,14 @@ import (
 	"path"
 
 	"github.com/google/go-tika/tika"
-	"github.com/jbrukh/bayesian"
+	"github.com/jovandeginste/docmgmt/bayes"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
 type App struct {
 	Configuration Configuration
-	Classifier    *bayesian.Classifier
+	Classifier    *bayes.Classifier
 	TikaServer    *tika.Server
 }
 
@@ -46,7 +46,7 @@ func (a *App) LoadConfiguration(cfgFile string) error {
 	}
 
 	cp, err := homedir.Expand("~/.docmgmt/classification.bin")
-	c, err := bayesian.NewClassifierFromFile(cp)
+	c, err := bayes.NewClassifierFromFile(cp)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return err

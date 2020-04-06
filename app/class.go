@@ -3,13 +3,6 @@ package app
 import (
 	"fmt"
 	"strings"
-
-	"github.com/navossoc/bayesian"
-)
-
-const (
-	Good bayesian.Class = "Good"
-	Bad  bayesian.Class = "Bad"
 )
 
 func (a *App) Classify(content string) string {
