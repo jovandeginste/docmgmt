@@ -2,17 +2,18 @@ package app
 
 import (
 	"fmt"
-	"strings"
+
+	"github.com/jovandeginste/docmgmt/bayes"
 )
 
-func (a *App) Classify(content string) string {
+func (a *App) Classify(body string) string {
 	if a.Classifier == nil {
 		return ""
 	}
 
-	_, likely, _ := a.Classifier.LogScores(
-		strings.Fields(strings.ToLower(string(content))),
-	)
+	content := bayes.PrepareString(body)
+
+	_, likely, _ := a.Classifier.LogScores(content)
 
 	fmt.Println(likely, a.Classifier.Classes[likely])
 

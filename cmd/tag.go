@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jovandeginste/docmgmt/bayes"
 	"github.com/spf13/cobra"
 )
 
@@ -20,12 +21,19 @@ func init() {
 }
 
 func tag(file string, tag string) {
+	tagClass := bayes.Class(tag)
+
+	myApp.Classifier.AddClass(tagClass)
+
 	body, err := myApp.ReadFileBody(file)
 	if err != nil {
 		panic(err)
 	}
 
-	err := myApp.WriteMetadata(file)
+	content := bayes.PrepareString(body)
+
+	myApp.Classifier.Learn(content, tagClass)
+	err = myApp.SaveClassifier()
 	if err != nil {
 		panic(err)
 	}

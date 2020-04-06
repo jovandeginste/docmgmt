@@ -45,14 +45,10 @@ func (a *App) LoadConfiguration(cfgFile string) error {
 		return err
 	}
 
-	cp, err := homedir.Expand("~/.docmgmt/classification.bin")
-	c, err := bayes.NewClassifierFromFile(cp)
+	err = a.LoadClassifier()
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
+		return err
 	}
-	a.Classifier = c
 
 	if a.Configuration.Verbose {
 		log.Println("Tika server version: " + a.Configuration.TikaVersion)
@@ -71,6 +67,33 @@ func (a *App) LoadConfiguration(cfgFile string) error {
 	a.TikaServer = s
 
 	return nil
+}
+
+func (a *App) LoadClassifier() error {
+	cp, err := homedir.Expand(a.Configuration.ClassifierData)
+	if err != nil {
+		return err
+	}
+
+	c, err := bayes.NewClassifierFromFile(cp)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+		c = bayes.NewClassifier()
+	}
+
+	a.Classifier = c
+	return nil
+}
+
+func (a *App) SaveClassifier() error {
+	cp, err := homedir.Expand(a.Configuration.ClassifierData)
+	if err != nil {
+		return err
+	}
+
+	return a.Classifier.WriteToFile(cp)
 }
 
 func (a *App) StartServer() error {
