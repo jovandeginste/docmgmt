@@ -20,6 +20,11 @@ func init() {
 }
 
 func tag(file string, tag string) {
+	err := myApp.AddFileTags(file, []string{tag})
+	if err != nil {
+		panic(err)
+	}
+
 	body, err := myApp.ReadFileBody(file)
 	if err != nil {
 		panic(err)

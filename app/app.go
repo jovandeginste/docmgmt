@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/google/go-tika/tika"
 	"github.com/jovandeginste/docmgmt/bayes"
@@ -49,10 +50,6 @@ func (a *App) LoadConfiguration(cfgFile string) error {
 	err = a.LoadClassifier()
 	if err != nil {
 		return err
-	}
-
-	if a.Configuration.Verbose {
-		log.Println("Tika server version: " + a.Configuration.TikaVersion)
 	}
 
 	p, err := homedir.Expand("~/.docmgmt/tika-server-" + a.Configuration.TikaVersion + ".jar")
@@ -99,7 +96,7 @@ func (a *App) SaveClassifier() error {
 
 func (a *App) StartServer() error {
 	if a.Configuration.Verbose {
-		log.Println("Starting tika server")
+		log.Println("Starting tika server version: " + a.Configuration.TikaVersion)
 	}
 	return a.TikaServer.Start(context.Background())
 }
@@ -112,7 +109,11 @@ func (a *App) StopServer() {
 }
 
 func (a *App) WriteMetadata(file string) error {
-	metaPath := a.MetadataDir(file)
+	metaPath, err := a.MetadataDir(file)
+	if err != nil {
+		return err
+	}
+
 	meta, body, err := a.Parse(file)
 	if err != nil {
 		return err
@@ -126,29 +127,85 @@ func (a *App) WriteMetadata(file string) error {
 	return nil
 }
 
-func (a *App) MetadataDir(file string) string {
+func (a *App) MetadataDir(file string) (string, error) {
 	sum := sha256.Sum256([]byte(file))
 	relPath := fmt.Sprintf("%x", sum)
+	fullPath := path.Join(a.Configuration.MetadataRoot, relPath[0:2], relPath[2:4], relPath)
 
-	return path.Join(a.Configuration.MetadataRoot, relPath[0:2], relPath[2:4], relPath)
+	src, err := os.Stat(fullPath)
+	if err != nil {
+		return fullPath, err
+	}
+	if !src.IsDir() {
+		return fullPath, errors.New("metadatadir '" + fullPath + "' exists but is not a directory")
+	}
+
+	return fullPath, nil
 }
 
 func (a *App) ReadFileBody(file string) (string, error) {
-	metaPath := a.MetadataDir(file)
+	metaPath, err := a.MetadataDir(file)
+	if err != nil {
+		return "", err
+	}
+
 	body, err := ioutil.ReadFile(path.Join(metaPath, "body.txt"))
 	if os.IsNotExist(err) {
-		return "", errors.New("file not parsed yet (" + metaPath + ")")
+		return "", errors.New("file not parsed yet")
 	}
 
 	return string(body), err
 }
 
 func (a *App) ReadFileMetadata(file string) (string, error) {
-	metaPath := a.MetadataDir(file)
+	metaPath, err := a.MetadataDir(file)
+	if err != nil {
+		return "", err
+	}
+
 	meta, err := ioutil.ReadFile(path.Join(metaPath, "metadata.json"))
 	if os.IsNotExist(err) {
 		return "", errors.New("file not parsed yet")
 	}
 
 	return string(meta), err
+}
+
+func (a *App) ReadFileTags(file string) ([]string, error) {
+	metaPath, err := a.MetadataDir(file)
+	if err != nil {
+		return []string{}, err
+	}
+
+	body, err := ioutil.ReadFile(path.Join(metaPath, "tags.txt"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []string{}, nil
+		}
+		return []string{}, err
+	}
+
+	return strings.Split(string(body), "\n"), nil
+}
+
+func (a *App) WriteFileTags(file string, tags []string) error {
+	content := []byte(strings.Join(tags, "\n"))
+	metaPath, err := a.MetadataDir(file)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(path.Join(metaPath, "tags.txt"), content, 0600)
+
+	return err
+}
+
+func (a *App) AddFileTags(file string, tags []string) error {
+	origTags, err := a.ReadFileTags(file)
+	if err != nil {
+		return err
+	}
+	allTags := append(origTags, tags...)
+
+	return a.WriteFileTags(file, allTags)
 }
