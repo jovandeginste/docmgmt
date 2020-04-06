@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -126,7 +127,7 @@ func (a *App) WriteMetadata(file string) error {
 	os.MkdirAll(metaPath, 0700)
 
 	ioutil.WriteFile(path.Join(metaPath, "metadata.json"), metaJSON, 0600)
-	ioutil.WriteFile(path.Join(metaPath, "body"), []byte(body), 0600)
+	ioutil.WriteFile(path.Join(metaPath, "body.txt"), []byte(body), 0600)
 	return nil
 }
 
@@ -139,7 +140,20 @@ func (a *App) MetadataDir(file string) string {
 
 func (a *App) ReadFileBody(file string) (string, error) {
 	metaPath := a.MetadataDir(file)
-	body, err := ioutil.ReadFile(path.Join(metaPath, "body"))
+	body, err := ioutil.ReadFile(path.Join(metaPath, "body.txt"))
+	if !os.IsNotExist(err) {
+		return "", errors.New("file not parsed yet")
+	}
 
 	return string(body), err
+}
+
+func (a *App) ReadFileMetadata(file string) (string, error) {
+	metaPath := a.MetadataDir(file)
+	meta, err := ioutil.ReadFile(path.Join(metaPath, "metadata.json"))
+	if !os.IsNotExist(err) {
+		return "", errors.New("file not parsed yet")
+	}
+
+	return string(meta), err
 }

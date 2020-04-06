@@ -19,3 +19,11 @@ func (a *App) Classify(body string) string {
 
 	return string(a.Classifier.Classes[likely])
 }
+
+func (a *App) Learn(body string, tag string) {
+	tagClass := bayes.Class(tag)
+	content := bayes.PrepareString(body)
+
+	a.Classifier.AddClass(tagClass)
+	a.Classifier.Learn(content, tagClass)
+}
