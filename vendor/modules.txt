@@ -36,6 +36,10 @@ github.com/spf13/jwalterweatherman
 github.com/spf13/pflag
 # github.com/spf13/viper v1.4.0
 github.com/spf13/viper
+# github.com/thedevsaddam/gojsonq v2.3.0+incompatible
+github.com/thedevsaddam/gojsonq
+# github.com/thoas/go-funk v0.6.0
+github.com/thoas/go-funk
 # golang.org/x/net v0.0.0-20190522155817-f3200d17e092
 golang.org/x/net/context/ctxhttp
 # golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a

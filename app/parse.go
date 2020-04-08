@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,6 +14,12 @@ import (
 
 	"github.com/google/go-tika/tika"
 )
+
+type Info struct {
+	Body     string
+	Metadata *Metadata
+	Tags     []string
+}
 
 type Metadata struct {
 	Filename string
@@ -27,6 +34,18 @@ type FileMetadata struct {
 }
 
 type TikaMetadata map[string][]string
+
+func (i *Info) JSON() []byte {
+	infoJSON, _ := json.Marshal(i)
+
+	return infoJSON
+}
+
+func (m *Metadata) JSON() []byte {
+	metaJSON, _ := json.Marshal(m)
+
+	return metaJSON
+}
 
 func fileMetadata(file string) (*FileMetadata, error) {
 	s, err := os.Stat(file)

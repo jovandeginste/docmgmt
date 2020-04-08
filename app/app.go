@@ -16,6 +16,7 @@ import (
 	"github.com/jovandeginste/docmgmt/bayes"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
+	"github.com/thoas/go-funk"
 )
 
 type App struct {
@@ -119,7 +120,7 @@ func (a *App) WriteMetadata(file string) error {
 		return err
 	}
 
-	metaJSON, err := json.Marshal(meta)
+	metaJSON := meta.JSON()
 
 	ioutil.WriteFile(path.Join(metaPath, "metadata.json"), metaJSON, 0600)
 	ioutil.WriteFile(path.Join(metaPath, "body.txt"), []byte(body), 0600)
@@ -129,7 +130,8 @@ func (a *App) WriteMetadata(file string) error {
 func (a *App) MetadataDir(file string, create bool) (string, error) {
 	sum := sha256.Sum256([]byte(file))
 	relPath := fmt.Sprintf("%x", sum)
-	fullPath := path.Join(a.Configuration.MetadataRoot, relPath[0:2], relPath[2:4], relPath)
+	shard := funk.Shard(relPath, 2, 2, false)
+	fullPath := path.Join(append([]string{a.Configuration.MetadataRoot}, shard...)...)
 
 	src, err := os.Stat(fullPath)
 	if err != nil {
@@ -146,12 +148,38 @@ func (a *App) MetadataDir(file string, create bool) (string, error) {
 	return fullPath, nil
 }
 
-func (a *App) ReadFileBody(file string) (string, error) {
+func (a *App) ReadFileInfo(file string) (*Info, error) {
 	metaPath, err := a.MetadataDir(file, false)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
+	return a.ReadFileInfoMetaPath(metaPath)
+}
+
+func (a *App) ReadFileInfoMetaPath(metaPath string) (i *Info, err error) {
+	body, err := a.ReadFileBody(metaPath)
+	if err != nil {
+		return
+	}
+
+	metadata, err := a.ReadFileMetadata(metaPath)
+	if err != nil {
+		return
+	}
+
+	tags, err := a.ReadFileTagsMetaPath(metaPath)
+
+	i = &Info{
+		Body:     body,
+		Metadata: metadata,
+		Tags:     tags,
+	}
+
+	return
+}
+
+func (a *App) ReadFileBody(metaPath string) (string, error) {
 	body, err := ioutil.ReadFile(path.Join(metaPath, "body.txt"))
 	if os.IsNotExist(err) {
 		return "", errors.New("file not parsed yet")
@@ -160,18 +188,17 @@ func (a *App) ReadFileBody(file string) (string, error) {
 	return string(body), err
 }
 
-func (a *App) ReadFileMetadata(file string) (string, error) {
-	metaPath, err := a.MetadataDir(file, false)
-	if err != nil {
-		return "", err
-	}
+func (a *App) ReadFileMetadata(metaPath string) (*Metadata, error) {
+	var m *Metadata
 
 	meta, err := ioutil.ReadFile(path.Join(metaPath, "metadata.json"))
 	if os.IsNotExist(err) {
-		return "", errors.New("file not parsed yet")
+		return m, errors.New("file not parsed yet")
 	}
 
-	return string(meta), err
+	err = json.Unmarshal(meta, &m)
+
+	return m, err
 }
 
 func (a *App) ReadFileTags(file string) ([]string, error) {
@@ -180,6 +207,10 @@ func (a *App) ReadFileTags(file string) ([]string, error) {
 		return []string{}, err
 	}
 
+	return a.ReadFileTagsMetaPath(metaPath)
+}
+
+func (a *App) ReadFileTagsMetaPath(metaPath string) ([]string, error) {
 	body, err := ioutil.ReadFile(path.Join(metaPath, "tags.txt"))
 	if err != nil {
 		if os.IsNotExist(err) {
