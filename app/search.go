@@ -68,6 +68,7 @@ func (a *App) Search(queries []string) ([]Result, error) {
 			qr, err := res.FindR(q.Q)
 
 			if err != nil {
+				match = false
 				continue
 			}
 
@@ -76,6 +77,7 @@ func (a *App) Search(queries []string) ([]Result, error) {
 			if err != nil {
 				name, err := qr.String()
 				if err != nil {
+					match = false
 					continue
 				}
 
@@ -88,6 +90,7 @@ func (a *App) Search(queries []string) ([]Result, error) {
 					subMatch = true
 				}
 			}
+
 			if !subMatch {
 				match = false
 			}
