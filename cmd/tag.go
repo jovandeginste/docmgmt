@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -36,4 +38,11 @@ func tag(file string, tag string) {
 	if err != nil {
 		panic(err)
 	}
+
+	tags, err := myApp.ReadFileTags(file)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Current tags for %s:\n%v\n", file, tags)
 }

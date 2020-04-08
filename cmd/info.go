@@ -26,6 +26,5 @@ func info(file string) {
 		panic(err)
 	}
 
-	info.Body = "OMITED"
 	fmt.Println(string(info.JSON()))
 }

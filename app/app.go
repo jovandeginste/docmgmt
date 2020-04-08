@@ -158,7 +158,7 @@ func (a *App) ReadFileInfo(file string) (*Info, error) {
 }
 
 func (a *App) ReadFileInfoMetaPath(metaPath string) (i *Info, err error) {
-	body, err := a.ReadFileBody(metaPath)
+	body, err := a.ReadFileBodyMetaPath(metaPath)
 	if err != nil {
 		return
 	}
@@ -179,7 +179,16 @@ func (a *App) ReadFileInfoMetaPath(metaPath string) (i *Info, err error) {
 	return
 }
 
-func (a *App) ReadFileBody(metaPath string) (string, error) {
+func (a *App) ReadFileBody(file string) (string, error) {
+	metaPath, err := a.MetadataDir(file, false)
+	if err != nil {
+		return "", err
+	}
+
+	return a.ReadFileBodyMetaPath(metaPath)
+}
+
+func (a *App) ReadFileBodyMetaPath(metaPath string) (string, error) {
 	body, err := ioutil.ReadFile(path.Join(metaPath, "body.txt"))
 	if os.IsNotExist(err) {
 		return "", errors.New("file not parsed yet")
