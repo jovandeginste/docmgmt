@@ -15,6 +15,7 @@ type Result struct {
 }
 type Query struct {
 	Q string
+	O func(a, b string) bool
 	V string
 }
 
@@ -45,9 +46,11 @@ func (a *App) Search(queries []string) ([]Result, error) {
 
 	for _, q := range queries {
 		splitQ := strings.SplitN(q, "=", 2)
+		theQ := Query{Q: splitQ[0], O: func(a, b string) bool { return a == b }}
 		if len(splitQ) > 1 {
-			splitQueries = append(splitQueries, Query{splitQ[0], splitQ[1]})
+			theQ.V = splitQ[1]
 		}
+		splitQueries = append(splitQueries, theQ)
 	}
 
 	for _, f := range files {
@@ -86,7 +89,7 @@ func (a *App) Search(queries []string) ([]Result, error) {
 
 			subMatch := false
 			for _, name := range names {
-				if name == q.V {
+				if q.O(q.V, name) {
 					subMatch = true
 				}
 			}
