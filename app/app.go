@@ -109,7 +109,7 @@ func (a *App) StopServer() {
 }
 
 func (a *App) WriteMetadata(file string) error {
-	metaPath, err := a.MetadataDir(file)
+	metaPath, err := a.MetadataDir(file, true)
 	if err != nil {
 		return err
 	}
@@ -120,21 +120,24 @@ func (a *App) WriteMetadata(file string) error {
 	}
 
 	metaJSON, err := json.Marshal(meta)
-	os.MkdirAll(metaPath, 0700)
 
 	ioutil.WriteFile(path.Join(metaPath, "metadata.json"), metaJSON, 0600)
 	ioutil.WriteFile(path.Join(metaPath, "body.txt"), []byte(body), 0600)
 	return nil
 }
 
-func (a *App) MetadataDir(file string) (string, error) {
+func (a *App) MetadataDir(file string, create bool) (string, error) {
 	sum := sha256.Sum256([]byte(file))
 	relPath := fmt.Sprintf("%x", sum)
 	fullPath := path.Join(a.Configuration.MetadataRoot, relPath[0:2], relPath[2:4], relPath)
 
 	src, err := os.Stat(fullPath)
 	if err != nil {
-		return fullPath, err
+		if !os.IsNotExist(err) {
+			return fullPath, err
+		}
+		os.MkdirAll(fullPath, 0700)
+		src, err = os.Stat(fullPath)
 	}
 	if !src.IsDir() {
 		return fullPath, errors.New("metadatadir '" + fullPath + "' exists but is not a directory")
@@ -144,7 +147,7 @@ func (a *App) MetadataDir(file string) (string, error) {
 }
 
 func (a *App) ReadFileBody(file string) (string, error) {
-	metaPath, err := a.MetadataDir(file)
+	metaPath, err := a.MetadataDir(file, false)
 	if err != nil {
 		return "", err
 	}
@@ -158,7 +161,7 @@ func (a *App) ReadFileBody(file string) (string, error) {
 }
 
 func (a *App) ReadFileMetadata(file string) (string, error) {
-	metaPath, err := a.MetadataDir(file)
+	metaPath, err := a.MetadataDir(file, false)
 	if err != nil {
 		return "", err
 	}
@@ -172,7 +175,7 @@ func (a *App) ReadFileMetadata(file string) (string, error) {
 }
 
 func (a *App) ReadFileTags(file string) ([]string, error) {
-	metaPath, err := a.MetadataDir(file)
+	metaPath, err := a.MetadataDir(file, false)
 	if err != nil {
 		return []string{}, err
 	}
@@ -190,7 +193,7 @@ func (a *App) ReadFileTags(file string) ([]string, error) {
 
 func (a *App) WriteFileTags(file string, tags []string) error {
 	content := []byte(strings.Join(tags, "\n"))
-	metaPath, err := a.MetadataDir(file)
+	metaPath, err := a.MetadataDir(file, false)
 	if err != nil {
 		return err
 	}
