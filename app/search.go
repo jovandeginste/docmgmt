@@ -1,10 +1,10 @@
 package app
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/thedevsaddam/gojsonq"
 )
@@ -13,10 +13,11 @@ type Result struct {
 	Element *Info
 	Queries []Query
 }
+
 type Query struct {
-	Q string
-	O func(a, b string) bool
-	V string
+	Key      string
+	Operator string
+	Value    string
 }
 
 func (a *App) MetadataFiles() []string {
@@ -41,66 +42,43 @@ func (a *App) MetadataFiles() []string {
 
 func (a *App) Search(queries []string) ([]Result, error) {
 	files := a.MetadataFiles()
-	result := []Result{}
 	splitQueries := []Query{}
 
 	for _, q := range queries {
-		splitQ := strings.SplitN(q, "=", 2)
-		theQ := Query{Q: splitQ[0], O: func(a, b string) bool { return a == b }}
-		if len(splitQ) > 1 {
-			theQ.V = splitQ[1]
+		var a []string
+		err := json.Unmarshal([]byte(q), &a)
+		if err != nil {
+			return []Result{}, err
+		}
+		theQ := Query{
+			Key:      a[0],
+			Operator: a[1],
+			Value:    a[2],
 		}
 		splitQueries = append(splitQueries, theQ)
+
 	}
+
+	var result []Result
 
 	for _, f := range files {
 		i, err := a.ReadFileInfoMetaPath(f)
 		if err != nil {
 			continue
 		}
+		i.Body = ""
 
-		e := Result{
-			Element: i,
-			Queries: []Query{},
-		}
+		fullJSON := "[" + string(i.JSON()) + "]"
 
-		match := true
-		res := gojsonq.New().JSONString(string(i.JSON()))
+		res := gojsonq.New().JSONString(string(fullJSON))
 
 		for _, q := range splitQueries {
-			qr, err := res.FindR(q.Q)
-
-			if err != nil {
-				match = false
-				continue
-			}
-
-			names, err := qr.StringSlice()
-
-			if err != nil {
-				name, err := qr.String()
-				if err != nil {
-					match = false
-					continue
-				}
-
-				names = []string{name}
-			}
-
-			subMatch := false
-			for _, name := range names {
-				if q.O(q.V, name) {
-					subMatch = true
-				}
-			}
-
-			if !subMatch {
-				match = false
-			}
+			res = res.Where(q.Key, q.Operator, q.Value)
 		}
+		theRes := res.Count()
 
-		if match {
-			result = append(result, e)
+		if theRes > 0 {
+			result = append(result, Result{Element: i})
 		}
 	}
 
