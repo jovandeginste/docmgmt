@@ -5,19 +5,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/thedevsaddam/gojsonq"
+	"github.com/elgs/jsonql"
 )
 
 type Result struct {
 	Element *Info
-	Queries []Query
-}
-
-type Query struct {
-	Key      string
-	Operator string
-	Value    string
 }
 
 func (a *App) MetadataFiles() []string {
@@ -42,22 +36,7 @@ func (a *App) MetadataFiles() []string {
 
 func (a *App) Search(queries []string) ([]Result, error) {
 	files := a.MetadataFiles()
-	splitQueries := []Query{}
-
-	for _, q := range queries {
-		var a []string
-		err := json.Unmarshal([]byte(q), &a)
-		if err != nil {
-			return []Result{}, err
-		}
-		theQ := Query{
-			Key:      a[0],
-			Operator: a[1],
-			Value:    a[2],
-		}
-		splitQueries = append(splitQueries, theQ)
-
-	}
+	fullQuery := strings.Join(queries, " ")
 
 	var result []Result
 
@@ -66,18 +45,19 @@ func (a *App) Search(queries []string) ([]Result, error) {
 		if err != nil {
 			continue
 		}
-		i.Body = ""
 
-		fullJSON := "[" + string(i.JSON()) + "]"
-
-		res := gojsonq.New().JSONString(string(fullJSON))
-
-		for _, q := range splitQueries {
-			res = res.Where(q.Key, q.Operator, q.Value)
+		fullJSON := string(i.JSON())
+		parser, err := jsonql.NewStringQuery(fullJSON)
+		if err != nil {
+			return result, err
 		}
-		theRes := res.Count()
+		res, err := parser.Query(fullQuery)
+		if err != nil {
+			return result, err
+		}
+		jsonRes, _ := json.Marshal(res)
 
-		if theRes > 0 {
+		if string(jsonRes) != "null" {
 			result = append(result, Result{Element: i})
 		}
 	}

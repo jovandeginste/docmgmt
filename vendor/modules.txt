@@ -1,3 +1,9 @@
+# github.com/elgs/gojq v0.0.0-20160421194050-81fa9a608a13
+github.com/elgs/gojq
+# github.com/elgs/gosplitargs v0.0.0-20161028071935-a491c5eeb3c8
+github.com/elgs/gosplitargs
+# github.com/elgs/jsonql v0.0.0-20200329014701-4e420b8aa13a
+github.com/elgs/jsonql
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/google/go-tika v0.1.21
@@ -36,8 +42,6 @@ github.com/spf13/jwalterweatherman
 github.com/spf13/pflag
 # github.com/spf13/viper v1.4.0
 github.com/spf13/viper
-# github.com/thedevsaddam/gojsonq v2.3.0+incompatible
-github.com/thedevsaddam/gojsonq
 # github.com/thoas/go-funk v0.6.0
 github.com/thoas/go-funk
 # golang.org/x/net v0.0.0-20190522155817-f3200d17e092
