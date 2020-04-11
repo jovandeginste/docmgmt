@@ -12,7 +12,9 @@ type Result struct {
 }
 
 func (a *App) Search(queries []string) ([]Result, error) {
-	files := []string{}
+	var files []string
+	a.DB.Find(&Info{}).Pluck("filename", &files)
+
 	fullQuery := strings.Join(queries, " ")
 
 	var result []Result
