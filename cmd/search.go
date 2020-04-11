@@ -27,6 +27,6 @@ func search(queries []string) {
 	}
 
 	for _, s := range search {
-		fmt.Println(s.Element.Metadata.Filename)
+		fmt.Println(s.Element.Filename)
 	}
 }

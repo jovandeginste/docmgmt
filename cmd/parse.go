@@ -27,7 +27,11 @@ func parse(files []string) {
 	defer myApp.StopServer()
 
 	for _, file := range files {
-		err := myApp.WriteMetadata(file)
+		i, err := myApp.Parse(file)
+		if err != nil {
+			panic(err)
+		}
+		err = i.Write()
 		if err != nil {
 			panic(err)
 		}

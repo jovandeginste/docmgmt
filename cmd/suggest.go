@@ -22,11 +22,11 @@ func init() {
 }
 
 func suggest(file string) {
-	body, err := myApp.ReadFileBody(file)
+	i, err := myApp.ReadFileInfo(file)
 	if err != nil {
 		panic(err)
 	}
 
-	sugg := myApp.Classify(body)
+	sugg := myApp.Classify(i.Body.Content)
 	fmt.Println("Suggested tag:", sugg)
 }

@@ -22,27 +22,20 @@ func init() {
 }
 
 func tag(file string, tag string) {
-	err := myApp.AddFileTags(file, []string{tag})
+	i, err := myApp.ReadFileInfo(file)
 	if err != nil {
 		panic(err)
 	}
+	i.AddTag(tag)
 
-	body, err := myApp.ReadFileBody(file)
-	if err != nil {
-		panic(err)
-	}
-
-	myApp.Learn(body, tag)
+	myApp.Learn(i.Body.Content, tag)
 
 	err = myApp.SaveClassifier()
 	if err != nil {
 		panic(err)
 	}
 
-	tags, err := myApp.ReadFileTags(file)
-	if err != nil {
-		panic(err)
-	}
+	i.Write()
 
-	fmt.Printf("Current tags for %s:\n%v\n", file, tags)
+	fmt.Printf("Current tags for %s:\n%v\n", file, i.Tags)
 }

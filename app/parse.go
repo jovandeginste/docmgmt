@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
-	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,38 +13,6 @@ import (
 
 	"github.com/google/go-tika/tika"
 )
-
-type Info struct {
-	Body     string
-	Metadata *Metadata
-	Tags     []string
-}
-
-type Metadata struct {
-	Filename string
-	Info     *FileMetadata
-	Tika     TikaMetadata
-}
-
-type FileMetadata struct {
-	MTime int64
-	CTime int64
-	Size  int64
-}
-
-type TikaMetadata map[string][]string
-
-func (i *Info) JSON() []byte {
-	infoJSON, _ := json.Marshal(i)
-
-	return infoJSON
-}
-
-func (m *Metadata) JSON() []byte {
-	metaJSON, _ := json.Marshal(m)
-
-	return metaJSON
-}
 
 func fileMetadata(file string) (*FileMetadata, error) {
 	s, err := os.Stat(file)
@@ -66,39 +33,51 @@ func fileMetadata(file string) (*FileMetadata, error) {
 	return &result, nil
 }
 
-func (a *App) Parse(file string) (*Metadata, string, error) {
+func (a *App) Parse(file string) (info *Info, err error) {
 	if a.Configuration.Verbose {
 		log.Printf("Parsing file: %#v", file)
 	}
 
+	info, err = a.ReadFileInfo(file)
+	if err != nil {
+		return
+	}
+
 	fileMeta, err := fileMetadata(file)
 	if err != nil {
-		return nil, "", err
+		return
 	}
+
+	info.Info = fileMeta
 
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, "", err
+		return
 	}
 	defer f.Close()
 
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, "", err
+		return
 	}
 
 	client := tika.NewClient(nil, a.TikaServer.URL())
 
 	meta, err := client.Meta(context.Background(), bytes.NewReader(content))
 	if err != nil {
-		return nil, "", err
+		return
+	}
+
+	cs, err := fileChecksum(file)
+	if err != nil {
+		return
 	}
 
 	metaResult := Metadata{
-		Filename: file,
-		Info:     fileMeta,
-		Tika:     TikaMetadata{},
+		Sha256: cs,
+		Tika:   TikaMetadata{},
 	}
+	info.Metadata = &metaResult
 
 	for _, s := range strings.Split(strings.TrimSpace(meta), "\n") {
 		r := csv.NewReader(strings.NewReader(s))
@@ -108,6 +87,7 @@ func (a *App) Parse(file string) (*Metadata, string, error) {
 	}
 
 	body, err := client.Parse(context.Background(), bytes.NewReader(content))
+	info.Body = &Body{Content: body}
 
-	return &metaResult, body, err
+	return
 }
