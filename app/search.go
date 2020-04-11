@@ -13,14 +13,14 @@ type Result struct {
 
 func (a *App) Search(queries []string) ([]Result, error) {
 	var files []string
-	a.DB.Find(&Info{}).Pluck("filename", &files)
+	a.DB.Table("infos").Pluck("filename", &files)
 
 	fullQuery := strings.Join(queries, " ")
 
 	var result []Result
 
 	for _, f := range files {
-		i, err := a.ReadFileInfo(f)
+		i, err := a.ReadAbsoluteFileInfo(f)
 		if err != nil {
 			continue
 		}

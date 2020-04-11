@@ -45,8 +45,11 @@ func (a *App) ReadFileInfo(file string) (result *Info, err error) {
 	}
 
 	path = strings.TrimPrefix(path, a.Configuration.DocumentRoot)
+	return a.ReadAbsoluteFileInfo(path)
+}
 
-	result = &Info{Filename: path}
+func (a *App) ReadAbsoluteFileInfo(file string) (result *Info, err error) {
+	result = &Info{Filename: file}
 	result.App = a
 
 	err = a.DB.Where(result).FirstOrInit(&result).Error
