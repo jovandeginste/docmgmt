@@ -19,13 +19,13 @@ type App struct {
 }
 
 func (a *App) StartServer() error {
-	a.Logf(LOG_INFO, "Starting tika server version: "+a.Configuration.TikaVersion)
+	a.Logf(LogInfo, "Starting tika server version: "+a.Configuration.TikaVersion)
 
 	return a.TikaServer.Start(context.Background())
 }
 
 func (a *App) StopServer() {
-	a.Logf(LOG_DEBUG, "Stopping tika server")
+	a.Logf(LogDebug, "Stopping tika server")
 
 	a.TikaServer.Stop()
 }
@@ -51,4 +51,30 @@ func (a *App) ReadAbsoluteFileInfo(file string) (result *Info, err error) {
 
 	err = a.DB.Where(result).FirstOrInit(&result).Error
 	return
+}
+
+func (a *App) AllTags() []string {
+	var (
+		result []string
+		tags   string
+	)
+
+	rows, _ := a.DB.Table("infos").Select("tags").Rows() //nolint:errcheck
+	defer rows.Close()
+
+	f := map[string]bool{}
+
+	for rows.Next() {
+		rows.Scan(&tags) //nolint:errcheck
+
+		for _, t := range strings.Split(tags, "\n") {
+			if _, ok := f[t]; !ok {
+				f[t] = true
+
+				result = append(result, t)
+			}
+		}
+	}
+
+	return result
 }

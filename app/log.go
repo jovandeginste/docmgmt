@@ -3,12 +3,12 @@ package app
 import "log"
 
 const (
-	LOG_UNDEFINED = iota
-	LOG_CRITICAL
-	LOG_ERROR
-	LOG_WARNING
-	LOG_INFO
-	LOG_DEBUG
+	LogUndefined = iota
+	LogCritical
+	LogError
+	LogWarning
+	LogInfo
+	LogDebug
 )
 
 func (a *App) Log(level int, message ...string) {

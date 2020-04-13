@@ -14,7 +14,7 @@ import (
 )
 
 func (a *App) fileMetadata(file string) (*FileMetadata, error) {
-	a.Logf(LOG_DEBUG, "Parsing filesystem metadata for: '%s'", file)
+	a.Logf(LogDebug, "Parsing filesystem metadata for: '%s'", file)
 
 	s, err := os.Stat(file)
 	if err != nil {
@@ -35,7 +35,7 @@ func (a *App) fileMetadata(file string) (*FileMetadata, error) {
 }
 
 func (a *App) Parse(file string) (info *Info, err error) {
-	a.Logf(LOG_INFO, "Parsing file: '%s'", file)
+	a.Logf(LogInfo, "Parsing file: '%s'", file)
 
 	info, err = a.ReadFileInfo(file)
 	if err != nil {
@@ -49,7 +49,7 @@ func (a *App) Parse(file string) (info *Info, err error) {
 
 	info.Info = fileMeta
 
-	a.Logf(LOG_DEBUG, "Reading content of: '%s'", file)
+	a.Logf(LogDebug, "Reading content of: '%s'", file)
 
 	f, err := os.Open(file)
 	if err != nil {
@@ -68,7 +68,7 @@ func (a *App) Parse(file string) (info *Info, err error) {
 	}
 	info.Metadata = &metaResult
 
-	a.Logf(LOG_DEBUG, "Fetching Tika metadata for: '%s'", file)
+	a.Logf(LogDebug, "Fetching Tika metadata for: '%s'", file)
 	client := tika.NewClient(nil, a.TikaServer.URL())
 	meta, err := client.Meta(context.Background(), bytes.NewReader(content))
 	if err != nil {
@@ -82,7 +82,7 @@ func (a *App) Parse(file string) (info *Info, err error) {
 		metaResult.Tika[fields[0]] = fields[1:]
 	}
 
-	a.Logf(LOG_DEBUG, "Fetching Tika body for: '%s'", file)
+	a.Logf(LogDebug, "Fetching Tika body for: '%s'", file)
 	body, err := client.Parse(context.Background(), bytes.NewReader(content))
 	info.Body = &Body{Content: body}
 

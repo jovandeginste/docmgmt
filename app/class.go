@@ -1,25 +1,51 @@
 package app
 
 import (
-	"fmt"
 	"os"
+	"sort"
 
 	"github.com/jovandeginste/docmgmt/bayes"
 	"github.com/mitchellh/go-homedir"
 )
 
-func (a *App) Classify(body string) string {
+type Classification struct {
+	Class bayes.Class
+	Score float64
+}
+
+type ClassificationList []Classification
+
+func (p ClassificationList) Len() int           { return len(p) }
+func (p ClassificationList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p ClassificationList) Less(i, j int) bool { return p[i].Score > p[j].Score }
+
+func (a *App) Classify(body string) (result ClassificationList) {
 	if a.Classifier == nil {
-		return ""
+		return
 	}
 
 	content := bayes.PrepareString(body)
 
-	_, likely, _ := a.Classifier.LogScores(content)
+	x, likely, _ := a.Classifier.LogScores(content)
+	a.Logf(LogDebug, "Classification top hit: '%s'; score: '%f'", a.Classifier.Classes[likely], x[likely])
 
-	fmt.Println(likely, a.Classifier.Classes[likely])
+	total := float64(0)
 
-	return string(a.Classifier.Classes[likely])
+	for i, c := range a.Classifier.Classes {
+		score := -1 / x[i]
+
+		result = append(result, Classification{Class: c, Score: score})
+
+		total += score
+	}
+
+	for i := range result {
+		result[i].Score /= total
+	}
+
+	sort.Sort(result)
+
+	return
 }
 
 func (a *App) Learn(body string, tag string) {

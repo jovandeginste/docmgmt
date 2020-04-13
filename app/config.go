@@ -41,11 +41,9 @@ func (a *App) LoadConfiguration(cfgFile string, debug bool) error {
 	}
 
 	if debug {
-		a.Configuration.LogLevel = LOG_DEBUG
-	} else {
-		if a.Configuration.LogLevel == LOG_UNDEFINED {
-			a.Configuration.LogLevel = LOG_INFO
-		}
+		a.Configuration.LogLevel = LogDebug
+	} else if a.Configuration.LogLevel == LogUndefined {
+		a.Configuration.LogLevel = LogInfo
 	}
 
 	err = a.InitDB()
