@@ -64,13 +64,14 @@ func (a *App) LoadClassifier() error {
 
 	c, err := bayes.NewClassifierFromFile(cp)
 	if os.IsNotExist(err) {
-		return err
-	}
-
-	if err != nil {
 		a.ResetClassifier()
 		return nil
 	}
+
+	if err != nil {
+		return err
+	}
+
 	a.Classifier = c
 	return nil
 }
