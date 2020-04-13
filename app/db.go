@@ -6,11 +6,13 @@ import (
 )
 
 func (a *App) InitDB() error {
+	a.Logf(LOG_DEBUG, "Opening database, using '%s'", a.Configuration.MetadataDB)
 	db, err := gorm.Open("sqlite3", a.Configuration.MetadataDB)
 	if err != nil {
 		return err
 	}
 
+	a.Logf(LOG_DEBUG, "Initializing database schema")
 	// Migrate the schema
 	db.AutoMigrate(&Info{})
 	db.AutoMigrate(&Body{})
@@ -20,5 +22,5 @@ func (a *App) InitDB() error {
 	db = db.Set("gorm:auto_preload", true)
 
 	a.DB = db
-	return nil
+	return db.Error
 }

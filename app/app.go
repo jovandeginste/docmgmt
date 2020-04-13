@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"log"
 	"path/filepath"
 	"strings"
 
@@ -20,16 +19,14 @@ type App struct {
 }
 
 func (a *App) StartServer() error {
-	if a.Configuration.Verbose {
-		log.Println("Starting tika server version: " + a.Configuration.TikaVersion)
-	}
+	a.Logf(LOG_INFO, "Starting tika server version: "+a.Configuration.TikaVersion)
+
 	return a.TikaServer.Start(context.Background())
 }
 
 func (a *App) StopServer() {
-	if a.Configuration.Verbose {
-		log.Println("Stopping tika server")
-	}
+	a.Logf(LOG_DEBUG, "Stopping tika server")
+
 	a.TikaServer.Stop()
 }
 

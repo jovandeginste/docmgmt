@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/csv"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"syscall"
@@ -14,7 +13,9 @@ import (
 	"github.com/google/go-tika/tika"
 )
 
-func fileMetadata(file string) (*FileMetadata, error) {
+func (a *App) fileMetadata(file string) (*FileMetadata, error) {
+	a.Logf(LOG_DEBUG, "Parsing filesystem metadata for: '%s'", file)
+
 	s, err := os.Stat(file)
 	if err != nil {
 		return nil, err
@@ -34,21 +35,21 @@ func fileMetadata(file string) (*FileMetadata, error) {
 }
 
 func (a *App) Parse(file string) (info *Info, err error) {
-	if a.Configuration.Verbose {
-		log.Printf("Parsing file: %#v", file)
-	}
+	a.Logf(LOG_INFO, "Parsing file: '%s'", file)
 
 	info, err = a.ReadFileInfo(file)
 	if err != nil {
 		return
 	}
 
-	fileMeta, err := fileMetadata(file)
+	fileMeta, err := a.fileMetadata(file)
 	if err != nil {
 		return
 	}
 
 	info.Info = fileMeta
+
+	a.Logf(LOG_DEBUG, "Reading content of: '%s'", file)
 
 	f, err := os.Open(file)
 	if err != nil {
@@ -61,23 +62,18 @@ func (a *App) Parse(file string) (info *Info, err error) {
 		return
 	}
 
-	client := tika.NewClient(nil, a.TikaServer.URL())
+	metaResult := Metadata{
+		Sha256: checksum(content),
+		Tika:   TikaMetadata{},
+	}
+	info.Metadata = &metaResult
 
+	a.Logf(LOG_DEBUG, "Fetching Tika metadata for: '%s'", file)
+	client := tika.NewClient(nil, a.TikaServer.URL())
 	meta, err := client.Meta(context.Background(), bytes.NewReader(content))
 	if err != nil {
 		return
 	}
-
-	cs, err := fileChecksum(file)
-	if err != nil {
-		return
-	}
-
-	metaResult := Metadata{
-		Sha256: cs,
-		Tika:   TikaMetadata{},
-	}
-	info.Metadata = &metaResult
 
 	for _, s := range strings.Split(strings.TrimSpace(meta), "\n") {
 		r := csv.NewReader(strings.NewReader(s))
@@ -86,6 +82,7 @@ func (a *App) Parse(file string) (info *Info, err error) {
 		metaResult.Tika[fields[0]] = fields[1:]
 	}
 
+	a.Logf(LOG_DEBUG, "Fetching Tika body for: '%s'", file)
 	body, err := client.Parse(context.Background(), bytes.NewReader(content))
 	info.Body = &Body{Content: body}
 

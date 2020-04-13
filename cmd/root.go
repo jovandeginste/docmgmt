@@ -5,8 +5,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
-var myApp app.App
+var (
+	cfgFile string
+	debug   bool
+	myApp   app.App
+)
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -30,11 +33,12 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.docmgmt.yaml)")
+	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logging")
 }
 
 // initApp initializes the application
 func initApp() {
-	err := myApp.LoadConfiguration(cfgFile)
+	err := myApp.LoadConfiguration(cfgFile, debug)
 	if err != nil {
 		panic(err)
 	}

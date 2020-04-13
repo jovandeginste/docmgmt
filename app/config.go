@@ -14,9 +14,10 @@ type Configuration struct {
 	MetadataDB     string `mapstructure:"metadata_db"`
 	TikaVersion    string `mapstructure:"tika_version"`
 	ClassifierData string `mapstructure:"classifier_data"`
+	LogLevel       int    `mapstructure:"log_level"`
 }
 
-func (a *App) LoadConfiguration(cfgFile string) error {
+func (a *App) LoadConfiguration(cfgFile string, debug bool) error {
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -37,6 +38,14 @@ func (a *App) LoadConfiguration(cfgFile string) error {
 	err := viper.Unmarshal(&a.Configuration)
 	if err != nil {
 		return err
+	}
+
+	if debug {
+		a.Configuration.LogLevel = LOG_DEBUG
+	} else {
+		if a.Configuration.LogLevel == LOG_UNDEFINED {
+			a.Configuration.LogLevel = LOG_INFO
+		}
 	}
 
 	err = a.InitDB()
