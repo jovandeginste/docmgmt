@@ -65,6 +65,18 @@ func (i *Info) AddTag(tag string) {
 	i.Tags = append(i.Tags, tag)
 }
 
+func (i *Info) DeleteTag(tag string) {
+	var filteredTags []string
+
+	for _, t := range i.Tags {
+		if t != tag {
+			filteredTags = append(filteredTags, t)
+		}
+	}
+
+	i.Tags = filteredTags
+}
+
 func (i *Info) AddTags(tags []string) {
 	for _, t := range tags {
 		i.AddTag(t)

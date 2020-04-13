@@ -12,20 +12,25 @@ type Result struct {
 }
 
 func (a *App) Search(queries []string) ([]Result, error) {
-	var files []string
-	a.DB.Table("infos").Pluck("filename", &files)
+	var (
+		result   []Result
+		filename string
+	)
 
 	fullQuery := strings.Join(queries, " ")
 
-	var result []Result
+	rows, _ := a.DB.Table("infos").Select("filename").Rows() //nolint:errcheck
+	defer rows.Close()
 
-	for _, f := range files {
-		i, err := a.ReadAbsoluteFileInfo(f)
+	for rows.Next() {
+		rows.Scan(&filename) //nolint:errcheck
+
+		info, err := a.ReadAbsoluteFileInfo(filename)
 		if err != nil {
 			continue
 		}
 
-		fullJSON := string(i.JSON())
+		fullJSON := string(info.JSON())
 		parser, err := jsonql.NewStringQuery(fullJSON)
 		if err != nil {
 			return result, err
@@ -37,7 +42,7 @@ func (a *App) Search(queries []string) ([]Result, error) {
 		jsonRes, _ := json.Marshal(res)
 
 		if string(jsonRes) != "null" {
-			result = append(result, Result{Element: i})
+			result = append(result, Result{Element: info})
 		}
 	}
 

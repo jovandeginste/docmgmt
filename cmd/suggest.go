@@ -22,6 +22,8 @@ func init() {
 }
 
 func suggest(file string) {
+	fmt.Printf("All tags: %+v\n", myApp.AllTags())
+
 	var picks []string
 
 	i, err := myApp.ReadFileInfo(file)
@@ -33,13 +35,19 @@ func suggest(file string) {
 		panic(fmt.Errorf("file is not indexed: '%s'", file))
 	}
 
-	fmt.Printf("Current tags: %+v\n", i.Tags)
+	threshold := 1.0
+	threshold /= float64(len(i.Tags) + 1)
+
+	fmt.Printf("Current tags: %+v; threshold: %f\n", i.Tags, threshold)
 	sugg := myApp.Classify(i.Body.Content)
-	total := float64(0)
 
 sugg:
 	for _, p := range sugg {
-		total += p.Score
+		fmt.Printf("Suggestion: %+v\n", p)
+		if p.Score < threshold {
+			break
+		}
+
 		klass := string(p.Class)
 		for _, t := range i.Tags {
 			if t == klass {
@@ -48,11 +56,6 @@ sugg:
 		}
 
 		picks = append(picks, klass)
-		if total > 0.5 {
-			break
-		}
 	}
-	fmt.Printf("Suggested tags: %+v\n", picks)
-
-	fmt.Printf("All tags: %+v\n", myApp.AllTags())
+	fmt.Printf("Suggested new tags: %+v\n", picks)
 }

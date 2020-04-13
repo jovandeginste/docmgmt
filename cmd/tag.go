@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jovandeginste/docmgmt/app"
 	"github.com/spf13/cobra"
 )
 
@@ -16,9 +17,11 @@ var tagCmd = &cobra.Command{
 		tag(args[0], args[1])
 	},
 }
+var delete bool
 
 func init() {
 	RootCmd.AddCommand(tagCmd)
+	tagCmd.Flags().BoolVarP(&delete, "delete", "d", false, "Delete tag instead of adding")
 }
 
 func tag(file string, tag string) {
@@ -26,16 +29,37 @@ func tag(file string, tag string) {
 	if err != nil {
 		panic(err)
 	}
-	i.AddTag(tag)
 
-	myApp.Learn(i.Body.Content, tag)
-
-	err = myApp.SaveClassifier()
+	if delete {
+		err = deleteTag(i, tag)
+	} else {
+		err = addTag(i, tag)
+	}
 	if err != nil {
 		panic(err)
 	}
 
-	i.Write()
-
 	fmt.Printf("Current tags for %s:\n%v\n", file, i.Tags)
+}
+
+func deleteTag(info *app.Info, tag string) error {
+	info.DeleteTag(tag)
+
+	return nil
+}
+
+func addTag(info *app.Info, tag string) error {
+
+	info.AddTag(tag)
+
+	myApp.Learn(info.Body.Content, tag)
+
+	err := myApp.SaveClassifier()
+	if err != nil {
+		return err
+	}
+
+	info.Write()
+
+	return nil
 }

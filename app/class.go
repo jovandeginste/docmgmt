@@ -63,13 +63,14 @@ func (a *App) LoadClassifier() error {
 	}
 
 	c, err := bayes.NewClassifierFromFile(cp)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-		c = bayes.NewClassifier()
+	if os.IsNotExist(err) {
+		return err
 	}
 
+	if err != nil {
+		a.ResetClassifier()
+		return nil
+	}
 	a.Classifier = c
 	return nil
 }
@@ -81,4 +82,34 @@ func (a *App) SaveClassifier() error {
 	}
 
 	return a.Classifier.WriteToFile(cp)
+}
+
+func (a *App) ResetClassifier() {
+	a.Classifier = bayes.NewClassifier()
+}
+
+func (a *App) RelearnTags() error {
+	a.ResetClassifier()
+
+	var filename string
+
+	rows, _ := a.DB.Table("infos").Select("filename").Rows() //nolint:errcheck
+	defer rows.Close()
+
+	for rows.Next() {
+		rows.Scan(&filename) //nolint:errcheck
+
+		info, err := a.ReadAbsoluteFileInfo(filename)
+		if err != nil {
+			return err
+		}
+
+		if info.Body != nil {
+			for _, t := range info.Tags {
+				a.Learn(info.Body.Content, t)
+			}
+		}
+	}
+
+	return a.SaveClassifier()
 }

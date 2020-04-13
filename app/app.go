@@ -59,10 +59,10 @@ func (a *App) AllTags() []string {
 		tags   string
 	)
 
+	f := map[string]bool{}
+
 	rows, _ := a.DB.Table("infos").Select("tags").Rows() //nolint:errcheck
 	defer rows.Close()
-
-	f := map[string]bool{}
 
 	for rows.Next() {
 		rows.Scan(&tags) //nolint:errcheck
