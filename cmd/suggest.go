@@ -38,6 +38,10 @@ func suggest(file string) {
 	threshold := 1.0
 	threshold /= float64(len(i.Tags) + 1)
 
+	if threshold > 0.5 {
+		threshold = 0.5
+	}
+
 	fmt.Printf("Current tags: %+v\n", i.Tags)
 	sugg := myApp.Classify(i.Body.Content)
 

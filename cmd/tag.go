@@ -33,7 +33,7 @@ func tag(file string, tag string) {
 	if delete {
 		err = deleteTag(i, tag)
 	} else {
-		err = addTag(i, tag)
+		err = addTags(i, []string{tag})
 	}
 	if err != nil {
 		panic(err)
@@ -48,11 +48,12 @@ func deleteTag(info *app.Info, tag string) error {
 	return nil
 }
 
-func addTag(info *app.Info, tag string) error {
+func addTags(info *app.Info, tags []string) error {
+	info.AddTags(tags)
 
-	info.AddTag(tag)
-
-	myApp.Learn(info.Body.Content, tag)
+	for _, t := range tags {
+		myApp.Learn(info.Body.Content, t)
+	}
 
 	err := myApp.SaveClassifier()
 	if err != nil {

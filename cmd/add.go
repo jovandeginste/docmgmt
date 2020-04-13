@@ -32,7 +32,9 @@ func add(files []string, tags []string) {
 		if err != nil {
 			panic(err)
 		}
-		i.AddTags(tags)
+
+		addTags(i, tags)
+
 		err = i.Write()
 		if err != nil {
 			panic(err)

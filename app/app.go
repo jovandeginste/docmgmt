@@ -64,7 +64,9 @@ func (a *App) AllTags() map[string]int {
 		rows.Scan(&tags) //nolint:errcheck
 
 		for _, t := range strings.Split(tags, "\n") {
-			result[t]++
+			if t != "" {
+				result[t]++
+			}
 		}
 	}
 
