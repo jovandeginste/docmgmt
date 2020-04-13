@@ -53,13 +53,9 @@ func (a *App) ReadAbsoluteFileInfo(file string) (result *Info, err error) {
 	return
 }
 
-func (a *App) AllTags() []string {
-	var (
-		result []string
-		tags   string
-	)
-
-	f := map[string]bool{}
+func (a *App) AllTags() map[string]int {
+	result := map[string]int{}
+	tags := ""
 
 	rows, _ := a.DB.Table("infos").Select("tags").Rows() //nolint:errcheck
 	defer rows.Close()
@@ -68,11 +64,7 @@ func (a *App) AllTags() []string {
 		rows.Scan(&tags) //nolint:errcheck
 
 		for _, t := range strings.Split(tags, "\n") {
-			if _, ok := f[t]; !ok {
-				f[t] = true
-
-				result = append(result, t)
-			}
+			result[t]++
 		}
 	}
 

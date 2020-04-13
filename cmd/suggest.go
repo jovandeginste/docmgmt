@@ -38,13 +38,13 @@ func suggest(file string) {
 	threshold := 1.0
 	threshold /= float64(len(i.Tags) + 1)
 
-	fmt.Printf("Current tags: %+v; threshold: %f\n", i.Tags, threshold)
+	fmt.Printf("Current tags: %+v\n", i.Tags)
 	sugg := myApp.Classify(i.Body.Content)
 
 sugg:
 	for _, p := range sugg {
-		fmt.Printf("Suggestion: %+v\n", p)
 		if p.Score < threshold {
+			fmt.Printf("First suggestion below threshold (%f): %+v\n", threshold, p)
 			break
 		}
 

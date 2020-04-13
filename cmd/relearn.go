@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -19,5 +21,9 @@ func init() {
 }
 
 func relearn() {
-	myApp.RelearnTags()
+	if err := myApp.RelearnTags(); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("All tags: %+v\n", myApp.AllTags())
 }
