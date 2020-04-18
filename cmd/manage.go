@@ -35,6 +35,11 @@ var (
 			"done",
 		},
 	}
+
+	tagPrompt = promptui.Select{
+		Label: "Which tag do you want to add?",
+		Size:  15,
+	}
 )
 
 func init() {
@@ -107,69 +112,51 @@ func manageTags(i *app.Info) error {
 }
 
 func addTagInteractive(i *app.Info) error {
-	suggestions := myApp.Classify(i.Body.Content)
-
 	for {
-		var (
-			remainingSuggestions app.ClassificationList
-			items                []string
-		)
+		var items []string
 
-	outer:
+		suggestions := i.Suggestions()
 		for _, s := range suggestions {
-			for _, t := range i.Tags {
-				if t == string(s.Class) {
-					continue outer
-				}
-			}
-			item := fmt.Sprintf("%s [%.02f%%]", s.Class, s.Score)
-			remainingSuggestions = append(remainingSuggestions, s)
-			items = append(items, item)
+			items = append(items, fmt.Sprintf("%s [%.02f%%]", s.Class, s.Score))
 		}
 
 		items = append(items, "[new]", "[done]")
-
-		tagPrompt := promptui.Select{
-			Label: "Which tag do you want to add?",
-			Items: items,
-			Size:  15,
-		}
-
+		tagPrompt.Items = items
 		pick, tag, err := tagPrompt.Run()
 
 		if err == promptui.ErrInterrupt {
 			os.Exit(0)
 		}
 
-		if tag == "[done]" {
+		switch tag {
+		case "[done]":
 			return nil
+		case "[new]":
+			tag = askNewTag()
+		default:
+			tag = string(suggestions[pick].Class)
 		}
 
-		if tag == "[new]" {
-			newTagPrompt := promptui.Prompt{
-				Label: "Enter a new tag",
+		if tag != "" {
+			err = addTags(i, []string{tag})
+			if err != nil {
+				return err
 			}
-
-			tag, err = newTagPrompt.Run()
-			if err == promptui.ErrInterrupt {
-				os.Exit(0)
-			}
-
-			if tag != "" {
-				err = addTags(i, []string{tag})
-				if err != nil {
-					return err
-				}
-			}
-		} else {
-			tag = string(remainingSuggestions[pick].Class)
-		}
-
-		err = addTags(i, []string{tag})
-		if err != nil {
-			return err
 		}
 	}
+}
+
+func askNewTag() string {
+	newTagPrompt := promptui.Prompt{
+		Label: "Enter a new tag",
+	}
+
+	tag, err := newTagPrompt.Run()
+	if err == promptui.ErrInterrupt {
+		os.Exit(0)
+	}
+
+	return tag
 }
 
 func deleteTagInteractive(i *app.Info) error {

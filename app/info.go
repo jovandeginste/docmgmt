@@ -75,6 +75,24 @@ func (i *Info) AbsoluteFilename() string {
 	return path.Join(i.App.Configuration.DocumentRoot, i.Filename)
 }
 
+func (i *Info) Suggestions() ClassificationList {
+	suggestions := i.App.Classify(i.Body.Content)
+
+	var remainingSuggestions ClassificationList
+
+outer:
+	for _, s := range suggestions {
+		for _, t := range i.Tags {
+			if t == string(s.Class) {
+				continue outer
+			}
+		}
+		remainingSuggestions = append(remainingSuggestions, s)
+	}
+
+	return remainingSuggestions
+}
+
 func (i *Info) OpenWithDefaultApp() error {
 	return browser.OpenFile(i.AbsoluteFilename())
 }
