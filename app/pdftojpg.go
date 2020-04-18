@@ -4,10 +4,11 @@ import "gopkg.in/gographics/imagick.v2/imagick"
 
 const PDFResolution = 300
 
-// ConvertPdfToJpg will take a filename of a pdf file and convert the file into an
-// image which will be saved back to the same location. It will save the image as a
-// high resolution jpg file with minimal compression.
-func ConvertPdfToJpg(pdfName string, pages int) (result [][]byte, err error) {
+type image []byte
+
+// convertPdfToJpg will take a PDF as input and convert this into a slice of
+// images (1 per input page)
+func convertPdfToImage(pdfContent image, pages int) (result []image, err error) {
 	// Setup
 	imagick.Initialize()
 	defer imagick.Terminate()
@@ -21,14 +22,19 @@ func ConvertPdfToJpg(pdfName string, pages int) (result [][]byte, err error) {
 		return
 	}
 
-	// Load the image file into imagick
-	if err = mw.ReadImage(pdfName); err != nil {
+	// Load the content into imagick
+	if err = mw.ReadImageBlob(pdfContent); err != nil {
 		return
 	}
 
 	// Must be *after* ReadImageFile
 	// Flatten image and remove alpha channel, to prevent alpha turning black in jpg
 	if err = mw.SetImageAlphaChannel(imagick.ALPHA_CHANNEL_FLATTEN); err != nil {
+		return
+	}
+
+	// Set any compression (100 = max quality)
+	if err = mw.SetCompressionQuality(100); err != nil {
 		return
 	}
 
@@ -45,5 +51,6 @@ func ConvertPdfToJpg(pdfName string, pages int) (result [][]byte, err error) {
 		blob := mw.GetImageBlob()
 		result = append(result, blob)
 	}
-	return
+
+	return result, err
 }

@@ -63,59 +63,104 @@ func (a *App) Parse(file string) (info *Info, err error) {
 		return
 	}
 
-	metaResult := Metadata{
+	info.Metadata = &Metadata{
 		Sha256: checksum(content),
 		Tika:   TikaMetadata{},
 	}
-	info.Metadata = &metaResult
+	info.Body = &Body{
+		Content: string(content),
+	}
 
-	a.Logf(LogDebug, "Fetching Tika metadata for: '%s'", file)
 	client := tika.NewClient(nil, a.TikaServer.URL())
-	meta, err := client.Meta(context.Background(), bytes.NewReader(content))
+
+	err = info.ParseMetadata(client)
 	if err != nil {
 		return
+	}
+
+	err = info.ParseBody(client)
+
+	return info, err
+}
+
+func (i *Info) ParseMetadata(client *tika.Client) error {
+	i.App.Logf(LogDebug, "Fetching Tika metadata for: '%s'", i.Filename)
+
+	meta, err := client.Meta(context.Background(), strings.NewReader(i.Body.Content))
+	if err != nil {
+		return err
 	}
 
 	for _, s := range strings.Split(strings.TrimSpace(meta), "\n") {
 		r := csv.NewReader(strings.NewReader(s))
 		fields, _ := r.Read()
 
-		metaResult.Tika[fields[0]] = fields[1:]
+		i.Metadata.Tika[fields[0]] = fields[1:]
 	}
 
-	a.Logf(LogDebug, "Fetching Tika body for: '%s'", file)
-	body, err := client.Parse(context.Background(), bytes.NewReader(content))
-	info.Body = &Body{Content: body}
+	return nil
+}
 
-	if strings.TrimSpace(body) == "" && len(metaResult.Tika["Content-Type"]) == 1 && metaResult.Tika["Content-Type"][0] == "application/pdf" {
-		nPages := 1
-		if len(metaResult.Tika["xmpTPg:NPages"]) > 0 {
-			nPagesStr := metaResult.Tika["xmpTPg:NPages"][0]
-			nPages, err = strconv.Atoi(nPagesStr)
-			if err != nil {
-				return
-			}
+func (i *Info) ParseBody(client *tika.Client) error {
+	i.App.Logf(LogDebug, "Fetching Tika body for: '%s'", i.Filename)
+
+	body, err := client.Parse(context.Background(), strings.NewReader(i.Body.Content))
+	if err != nil {
+		return err
+	}
+
+	if body = strings.TrimSpace(body); body != "" {
+		i.Body.Content = body
+
+		return nil
+	}
+
+	if len(i.Metadata.Tika["Content-Type"]) == 1 && i.Metadata.Tika["Content-Type"][0] == "application/pdf" {
+		err = i.ParseBodyAsImage(client)
+		if err != nil {
+			return err
 		}
+	}
 
-		a.Logf(LogInfo, "PDF body seems empty; trying to convert OCR. We seem to have %d page(s).", nPages)
+	return err
+}
 
-		var results [][]byte
+func (i *Info) ParseBodyAsImage(client *tika.Client) (err error) {
+	nPages := 1
 
-		results, err = ConvertPdfToJpg(file, nPages)
+	if len(i.Metadata.Tika["xmpTPg:NPages"]) > 0 {
+		nPagesStr := i.Metadata.Tika["xmpTPg:NPages"][0]
+		nPages, err = strconv.Atoi(nPagesStr)
+
+		if err != nil {
+			return
+		}
+	}
+
+	i.App.Logf(LogInfo, "PDF body seems empty; trying to convert OCR. We seem to have %d page(s).", nPages)
+
+	var (
+		results     []image
+		body, bodyN string
+	)
+
+	results, err = convertPdfToImage(image(i.Body.Content), nPages)
+	if err != nil {
+		return
+	}
+
+	i.App.Logf(LogInfo, "Performing OCR scan on images.")
+
+	for _, r := range results {
+		bodyN, err = client.Parse(context.Background(), bytes.NewReader(r))
 		if err != nil {
 			return
 		}
 
-		a.Logf(LogInfo, "Performing OCR scan on images.")
-		body = ""
-		bodyN := ""
-		for _, r := range results {
-			bodyN, err = client.Parse(context.Background(), bytes.NewReader(r))
-			body += bodyN + "\n"
-		}
-
-		info.Body = &Body{Content: body}
+		body += bodyN + "\n"
 	}
+
+	i.Body.Content = strings.TrimSpace(body)
 
 	return
 }
