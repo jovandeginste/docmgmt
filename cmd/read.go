@@ -27,6 +27,11 @@ func read(file string) {
 	if err != nil {
 		panic(err)
 	}
+
+	if info.IsNew() {
+		panic("file is not yet parsed")
+	}
+
 	pager, ok := os.LookupEnv("PAGER")
 	if !ok {
 		pager = "less"

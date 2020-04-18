@@ -4,9 +4,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/browser"
 )
 
 type Info struct {
@@ -67,6 +69,14 @@ func (i *Info) AddTag(tag string) {
 	}
 
 	i.Tags = append(i.Tags, tag)
+}
+
+func (i *Info) AbsoluteFilename() string {
+	return path.Join(i.App.Configuration.DocumentRoot, i.Filename)
+}
+
+func (i *Info) OpenWithDefaultApp() error {
+	return browser.OpenFile(i.AbsoluteFilename())
 }
 
 func (i *Info) DeleteTag(tag string) {

@@ -6,3 +6,5 @@
 * docmgmt suggest $myfile
 * docmgmt tag $myfile $t3
 * docmgmt search $query
+* docmgmt relearn
+* docmgmt ingest

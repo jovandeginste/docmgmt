@@ -31,7 +31,7 @@ func suggest(file string) {
 		panic(err)
 	}
 
-	if i.Body == nil {
+	if i.IsNew() {
 		panic(fmt.Errorf("file is not indexed: '%s'", file))
 	}
 
