@@ -37,6 +37,7 @@ require (
 	github.com/thoas/go-funk v0.6.0 // indirect
 	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
 	golang.org/x/tools v0.0.0-20200413015812-1f08ef6002a8 // indirect
+	gopkg.in/gographics/imagick.v2 v2.6.0
 	gopkg.in/ini.v1 v1.55.0 // indirect
 	mvdan.cc/unparam v0.0.0-20200314162735-0ac8026f7d06 // indirect
 	sourcegraph.com/sqs/pbtypes v1.0.0 // indirect

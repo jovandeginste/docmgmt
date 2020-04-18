@@ -43,6 +43,10 @@ type FileMetadata struct {
 type TikaMetadata map[string][]string
 type Tags []string
 
+func (i *Info) IsNew() bool {
+	return i.CreatedAt.IsZero()
+}
+
 func (i *Info) JSON() []byte {
 	infoJSON, _ := json.Marshal(i)
 

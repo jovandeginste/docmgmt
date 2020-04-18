@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -85,6 +86,36 @@ func (a *App) Parse(file string) (info *Info, err error) {
 	a.Logf(LogDebug, "Fetching Tika body for: '%s'", file)
 	body, err := client.Parse(context.Background(), bytes.NewReader(content))
 	info.Body = &Body{Content: body}
+
+	if strings.TrimSpace(body) == "" && len(metaResult.Tika["Content-Type"]) == 1 && metaResult.Tika["Content-Type"][0] == "application/pdf" {
+		nPages := 1
+		if len(metaResult.Tika["xmpTPg:NPages"]) > 0 {
+			nPagesStr := metaResult.Tika["xmpTPg:NPages"][0]
+			nPages, err = strconv.Atoi(nPagesStr)
+			if err != nil {
+				return
+			}
+		}
+
+		a.Logf(LogInfo, "PDF body seems empty; trying to convert OCR. We seem to have %d page(s).", nPages)
+
+		var results [][]byte
+
+		results, err = ConvertPdfToJpg(file, nPages)
+		if err != nil {
+			return
+		}
+
+		a.Logf(LogInfo, "Performing OCR scan on images.")
+		body = ""
+		bodyN := ""
+		for _, r := range results {
+			bodyN, err = client.Parse(context.Background(), bytes.NewReader(r))
+			body += bodyN + "\n"
+		}
+
+		info.Body = &Body{Content: body}
+	}
 
 	return
 }
